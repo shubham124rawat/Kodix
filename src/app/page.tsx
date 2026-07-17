@@ -40,9 +40,9 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="flex flex-col min-h-screen lg:h-screen bg-background lg:overflow-hidden">
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-4 border-b border-surface">
+      <header className="flex items-center justify-between px-4 lg:px-6 py-3 lg:py-4 border-b border-surface flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-accent-primary flex items-center justify-center">
             <span className="text-white font-bold text-lg">K</span>
@@ -81,7 +81,7 @@ export default function Home() {
       )}
 
       {/* Main Workspace */}
-      <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
+      <div className="flex flex-col lg:flex-row flex-1 lg:overflow-hidden">
         {/* Left Sidebar - Controls */}
         <Sidebar
           selectedModule={codeGenerator.selectedModule}

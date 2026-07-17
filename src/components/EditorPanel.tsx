@@ -35,9 +35,9 @@ export default function EditorPanel({
   };
 
   return (
-    <div className="flex flex-col bg-editor h-[50vh] lg:h-[500px]">
+    <div className="flex flex-col bg-editor h-[40vh] lg:h-[500px] min-h-[300px]">
       {/* Editor Header */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-surface flex-shrink-0">
+      <div className="flex items-center justify-between px-3 lg:px-4 py-2 border-b border-surface flex-shrink-0">
         <div className="flex items-center gap-2">
           <span className="text-sm text-text-secondary">main.{selectedLanguage.toLowerCase().replace("++", "pp")}</span>
           {isGenerating && (

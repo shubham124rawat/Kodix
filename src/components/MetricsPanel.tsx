@@ -17,9 +17,9 @@ export default function MetricsPanel({
         <button className="px-4 py-2 text-sm font-medium text-accent-primary border-b-2 border-accent-primary">
           Explanation
         </button>
-        <button className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-primary transition-all duration-300 ease-in-out">
+        {/* <button className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-primary transition-all duration-300 ease-in-out">
           Review
-        </button>
+        </button> */}
       </div>
       <div className="p-4 bg-surface flex-1 overflow-y-auto">
         {explanation ? (

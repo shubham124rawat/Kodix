@@ -42,7 +42,7 @@ export default function Sidebar({
   onDismissServiceUnavailable,
 }: SidebarProps) {
   return (
-    <div className="w-full lg:w-96 flex flex-col border-r border-surface lg:border-r border-b lg:border-b-0 bg-background max-h-[calc(100vh-80px)] overflow-hidden">
+    <div className="w-full lg:w-96 flex flex-col border-r border-surface lg:border-r border-b lg:border-b-0 bg-background lg:max-h-[calc(100vh-80px)] overflow-hidden">
       <div className="p-4 space-y-4 overflow-y-auto flex-shrink-0">
         {/* Module Selection */}
         <div>

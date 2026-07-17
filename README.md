@@ -1,6 +1,6 @@
 # Kodix - AI Code Assistant
 
-Kodix is an AI-powered code generation and debugging assistant built with Next.js and Google's Gemini AI. It helps developers generate code, debug broken code, explain complex logic, and optimize performance.
+Kodix is an AI-powered code generation and debugging assistant built with Next.js and Groq Cloud API running Llama 3.3 70B. It helps developers generate code, debug broken code, explain complex logic, and optimize performance.
 
 ## 🚀 Live Demo
 
@@ -21,7 +21,7 @@ Check out the live application: [https://kodix-topaz.vercel.app/](https://kodix-
 - **Frontend**: Next.js 16, React, TypeScript
 - **Styling**: Tailwind CSS
 - **Editor**: Monaco Editor
-- **AI**: Google Gemini API
+- **AI**: Groq Cloud API (llama-3.3-70b-versatile)
 - **Deployment**: Vercel
 
 ## 📦 Installation
@@ -38,9 +38,9 @@ npm install
 ```
 
 3. Set up environment variables:
-Create a `.env.local` file and add your Google Gemini API key:
+Create a `.env.local` file and add your Groq API key:
 ```env
-GEMINI_API_KEY=your_api_key_here
+GROQ_API_KEY=your_api_key_here
 ```
 
 4. Run the development server:
