@@ -22,6 +22,7 @@ Check out the live application: [https://kodix-topaz.vercel.app/](https://kodix-
 - **Styling**: Tailwind CSS
 - **Editor**: Monaco Editor
 - **AI**: Groq Cloud API (llama-3.3-70b-versatile)
+- **AI**: Groq Cloud API (`llama-3.3-70b-versatile`)
 - **Deployment**: Vercel
 
 ## 📦 Installation
