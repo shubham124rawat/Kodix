@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import Groq from "groq-sdk";
 
 const SYSTEM_PROMPTS = {
   generation: `You are a highly skilled, pragmatic human developer who loves simple, readable, and elegant code.
@@ -30,11 +30,11 @@ Provide:
 
 export async function POST(request: Request) {
   try {
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GROQ_API_KEY;
 
     if (!apiKey) {
       return new Response(
-        JSON.stringify({ error: "Server configuration error: API key missing" }),
+        JSON.stringify({ error: "Server configuration error: Groq API key missing" }),
         { status: 500, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -51,58 +51,26 @@ export async function POST(request: Request) {
 
     const systemPrompt = SYSTEM_PROMPTS[module as keyof typeof SYSTEM_PROMPTS] || SYSTEM_PROMPTS.generation;
 
-    const fullPrompt = `${systemPrompt}\n\nLanguage: ${language}\n\nUser Request:\n${prompt}`;
+    // Initialize the Groq SDK client
+    const groq = new Groq({ apiKey });
 
-    const ai = new GoogleGenAI({ apiKey });
+    // Request a real-time streaming completion via Llama 3.3 70B
+    const responseStream = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: `Language: ${language}\n\nUser Request:\n${prompt}` }
+      ],
+      stream: true,
+    });
 
-    // Retry-backoff strategy for 503 errors
-    let result: any;
-    let retryCount = 0;
-    const maxRetries = 1;
-
-    while (retryCount <= maxRetries) {
-      try {
-        result = await ai.models.generateContentStream({
-          model: "gemini-3.5-flash",
-          contents: fullPrompt,
-        });
-        break; // Success, exit retry loop
-      } catch (error: any) {
-        // Check for 503 Service Unavailable error (check multiple possible error structures)
-        const is503Error =
-          error?.status === 503 ||
-          error?.code === 503 ||
-          error?.message?.includes("503") ||
-          error?.message?.includes("UNAVAILABLE") ||
-          String(error).includes("503") ||
-          String(error).includes("UNAVAILABLE");
-
-        if (is503Error) {
-          if (retryCount < maxRetries) {
-            retryCount++;
-            await new Promise(resolve => setTimeout(resolve, 1500)); // Wait 1.5 seconds
-            continue; // Retry
-          } else {
-            // Max retries reached, return friendly 503 response
-            return new Response(
-              JSON.stringify({
-                error: "The AI servers are currently experiencing heavy traffic. Please wait a few seconds and try clicking generate again!"
-              }),
-              { status: 503, headers: { "Content-Type": "application/json" } }
-            );
-          }
-        }
-        throw error; // Re-throw non-503 errors
-      }
-    }
-
-    // Create a streaming response
+    // Pipe the incoming Groq data chunks through Next.js ReadableStream response framework
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          for await (const chunk of result) {
-            const text = chunk.text;
+          for await (const chunk of responseStream) {
+            const text = chunk.choices[0]?.delta?.content || "";
             if (text) {
               controller.enqueue(encoder.encode(text));
             }
@@ -121,18 +89,19 @@ export async function POST(request: Request) {
       },
     });
 
-  } catch (error) {
-    console.error("API Error:", error);
+  } catch (error: any) {
+    console.error("Groq API Error:", error);
 
-    if (error instanceof Error && error.message.includes("429")) {
+    // Gracefully catch standard free-tier rate limits (429) if triggered
+    if (error?.status === 429 || error?.message?.includes("429")) {
       return new Response(
-        JSON.stringify({ error: "System is temporarily busy. Please wait a moment before requesting another generation." }),
+        JSON.stringify({ error: "System is temporarily busy handling requests. Please wait a few seconds before trying again." }),
         { status: 429, headers: { "Content-Type": "application/json" } }
       );
     }
 
     return new Response(
-      JSON.stringify({ error: "An unexpected error occurred during code generation" }),
+      JSON.stringify({ error: "An unexpected error occurred during code generation." }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
