@@ -54,9 +54,9 @@ export async function POST(request: Request) {
     // Initialize the Groq SDK client
     const groq = new Groq({ apiKey });
 
-    // Request a real-time streaming completion via Llama 3.3 70B
+    // Request a real-time streaming completion via GPT-OSS 120B
     const responseStream = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: `Language: ${language}\n\nUser Request:\n${prompt}` }
