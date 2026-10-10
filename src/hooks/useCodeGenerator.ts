@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { RateLimitEntry } from "@/types/history";
+import type { HistoryEntry, RateLimitEntry } from "@/types/history";
 import { parseStreamResponse } from "@/utils/parser";
 
 const RATE_LIMIT_KEY = "kodix_rate_limit";
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute in milliseconds
 const MAX_REQUESTS_PER_WINDOW = 5;
 
-export const useCodeGenerator = (isClient: boolean, saveToHistory: (entry: any) => void) => {
+export const useCodeGenerator = (isClient: boolean, saveToHistory: (entry: HistoryEntry) => void) => {
   const [selectedModule, setSelectedModule] = useState("Code Generator");
   const [selectedLanguage, setSelectedLanguage] = useState("Python");
   const [prompt, setPrompt] = useState("");
@@ -121,15 +121,10 @@ console.log(\`Fibonacci(10) = \${result}\`);
       let finalExplanation = "";
       let finalTimeComplexity = "";
       let finalSpaceComplexity = "";
+      let lastFlush = 0;
+      const FLUSH_INTERVAL = 60;
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        accumulatedResponse += chunk;
-
-        // Parse and update in real-time
+      const flush = () => {
         const parsed = parseStreamResponse(accumulatedResponse);
         setGeneratedCode(parsed.code);
         setExplanation(parsed.explanation);
@@ -141,7 +136,23 @@ console.log(\`Fibonacci(10) = \${result}\`);
         finalExplanation = parsed.explanation;
         finalTimeComplexity = parsed.timeComplexity;
         finalSpaceComplexity = parsed.spaceComplexity;
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        accumulatedResponse += chunk;
+
+        // Throttle re-parses/renders so large streams stay smooth
+        const now = Date.now();
+        if (now - lastFlush >= FLUSH_INTERVAL) {
+          lastFlush = now;
+          flush();
+        }
       }
+      flush(); // final flush with the complete response
 
       // Save to history after successful generation
       if (finalCode) {

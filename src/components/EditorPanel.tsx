@@ -1,8 +1,23 @@
 "use client";
 
-import { useRef, useState } from "react";
-import Editor from "@monaco-editor/react";
+import { useState } from "react";
+import Editor, { loader } from "@monaco-editor/react";
+import {
+  Check,
+  Copy,
+  Download,
+  FileCode2,
+  Minus,
+  Plus,
+  WrapText,
+} from "lucide-react";
 import { getMonacoLanguage } from "@/utils/parser";
+import { Tooltip } from "@/components/ui/Tooltip";
+import { cn } from "@/utils/cn";
+
+// Self-host Monaco from our own static assets instead of fetching ~3MB+ from
+// a third-party CDN at runtime. This makes the editor load fast and reliably.
+loader.config({ paths: { vs: "/vs" } });
 
 interface EditorPanelProps {
   selectedLanguage: string;
@@ -21,85 +36,116 @@ export default function EditorPanel({
   onCopy,
   onDownload,
 }: EditorPanelProps) {
-  const editorRef = useRef<any>(null);
   const [fontSize, setFontSize] = useState(14);
   const [wordWrap, setWordWrap] = useState(false);
 
   const handleFontSizeChange = (delta: number) => {
-    const newSize = Math.max(12, Math.min(20, fontSize + delta));
-    setFontSize(newSize);
+    setFontSize((prev) => Math.max(12, Math.min(20, prev + delta)));
   };
 
-  const toggleWordWrap = () => {
-    setWordWrap(!wordWrap);
-  };
+  const fileBase = selectedLanguage.toLowerCase().replace("++", "pp");
 
   return (
-    <div className="flex flex-col bg-editor h-[40vh] lg:h-[500px] min-h-[300px]">
-      {/* Editor Header */}
-      <div className="flex items-center justify-between px-3 lg:px-4 py-2 border-b border-surface flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-text-secondary">main.{selectedLanguage.toLowerCase().replace("++", "pp")}</span>
+    <section className="flex h-[45vh] min-h-[320px] flex-col overflow-hidden border-b border-border bg-editor lg:h-[520px] lg:border-b-0 lg:border-r">
+      {/* Toolbar */}
+      <header className="flex flex-shrink-0 items-center justify-between gap-2 border-b border-border bg-surface px-3 py-2 lg:px-4">
+        <div className="flex min-w-0 items-center gap-2">
+          <FileCode2 className="h-4 w-4 flex-shrink-0 text-text-muted" aria-hidden="true" />
+          <span className="truncate text-sm font-medium text-text-primary font-mono">
+            main.{fileBase}
+          </span>
           {isGenerating && (
-            <span className="flex items-center gap-1 text-xs text-accent-primary">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-primary opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-primary"></span>
+            <span className="flex items-center gap-1.5 rounded-full bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent-hover">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent" />
               </span>
-              Streaming...
-              <span className="animate-pulse ml-1">|</span>
+              Streaming
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          {/* Font Size Controls */}
-          <div className="flex items-center gap-1 border-r border-surface pr-2 mr-2">
-            <button
-              className="px-2 py-1 text-sm text-text-secondary hover:text-text-primary transition-all duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={() => handleFontSizeChange(-1)}
-              disabled={fontSize <= 12}
-            >
-              -
-            </button>
-            <span className="text-sm text-text-secondary w-6 text-center">{fontSize}px</span>
-            <button
-              className="px-2 py-1 text-sm text-text-secondary hover:text-text-primary transition-all duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={() => handleFontSizeChange(1)}
-              disabled={fontSize >= 20}
-            >
-              +
-            </button>
+
+        <div className="flex items-center gap-1">
+          <div className="mr-1 hidden items-center gap-0.5 rounded-md border border-border bg-background/50 p-0.5 md:flex">
+            <Tooltip content="Decrease font size">
+              <button
+                type="button"
+                onClick={() => handleFontSizeChange(-1)}
+                disabled={fontSize <= 12}
+                aria-label="Decrease font size"
+                className="rounded p-1.5 text-text-secondary transition-colors hover:bg-surface-elevated hover:text-text-primary disabled:pointer-events-none disabled:opacity-40"
+              >
+                <Minus className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
+            </Tooltip>
+            <span className="w-9 text-center text-xs tabular-nums text-text-secondary">
+              {fontSize}px
+            </span>
+            <Tooltip content="Increase font size">
+              <button
+                type="button"
+                onClick={() => handleFontSizeChange(1)}
+                disabled={fontSize >= 20}
+                aria-label="Increase font size"
+                className="rounded p-1.5 text-text-secondary transition-colors hover:bg-surface-elevated hover:text-text-primary disabled:pointer-events-none disabled:opacity-40"
+              >
+                <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
+            </Tooltip>
           </div>
-          {/* Word Wrap Toggle */}
-          <button
-            className={`px-3 py-1 text-sm transition-all duration-300 ease-in-out ${wordWrap
-              ? "text-accent-primary bg-accent-primary/10"
-              : "text-text-secondary hover:text-text-primary"
-              }`}
-            onClick={toggleWordWrap}
-            title="Toggle Word Wrap"
-          >
-            Wrap
-          </button>
-          {/* Copy Button */}
-          <button
-            className="px-3 py-1 text-sm text-text-secondary hover:text-text-primary transition-all duration-300 ease-in-out"
-            onClick={onCopy}
-          >
-            {copySuccess ? "Copied!" : "Copy"}
-          </button>
-          {/* Download Button */}
-          <button
-            className="px-3 py-1 text-sm text-text-secondary hover:text-text-primary transition-all duration-300 ease-in-out"
-            onClick={onDownload}
-          >
-            Download
-          </button>
+
+          <Tooltip content={wordWrap ? "Disable word wrap" : "Enable word wrap"}>
+            <button
+              type="button"
+              onClick={() => setWordWrap((w) => !w)}
+              aria-pressed={wordWrap}
+              aria-label="Toggle word wrap"
+              className={cn(
+                "rounded-md p-2 transition-colors duration-150",
+                wordWrap
+                  ? "bg-accent-soft text-accent-hover"
+                  : "text-text-secondary hover:bg-surface-elevated hover:text-text-primary"
+              )}
+            >
+              <WrapText className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </Tooltip>
+
+          <Tooltip content={copySuccess ? "Copied" : "Copy code"}>
+            <button
+              type="button"
+              onClick={onCopy}
+              aria-label="Copy code"
+              className={cn(
+                "rounded-md p-2 transition-colors duration-150",
+                copySuccess
+                  ? "bg-success/10 text-success"
+                  : "text-text-secondary hover:bg-surface-elevated hover:text-text-primary"
+              )}
+            >
+              {copySuccess ? (
+                <Check className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <Copy className="h-4 w-4" aria-hidden="true" />
+              )}
+            </button>
+          </Tooltip>
+
+          <Tooltip content="Download code">
+            <button
+              type="button"
+              onClick={onDownload}
+              aria-label="Download code"
+              className="rounded-md p-2 text-text-secondary transition-colors duration-150 hover:bg-surface-elevated hover:text-text-primary"
+            >
+              <Download className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </Tooltip>
         </div>
-      </div>
+      </header>
 
       {/* Monaco Editor */}
-      <div className="flex-1 overflow-hidden">
+      <div className="min-h-0 flex-1">
         <Editor
           height="100%"
           defaultLanguage="python"
@@ -114,9 +160,14 @@ export default function EditorPanel({
             scrollBeyondLastLine: false,
             automaticLayout: true,
             wordWrap: wordWrap ? "on" : "off",
+            renderLineHighlight: "line",
+            cursorStyle: "line",
+            folding: false,
+            contextmenu: false,
+            smoothScrolling: true,
           }}
         />
       </div>
-    </div>
+    </section>
   );
 }

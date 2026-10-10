@@ -54,9 +54,9 @@ export async function POST(request: Request) {
     // Initialize the Groq SDK client
     const groq = new Groq({ apiKey });
 
-    // Request a real-time streaming completion via GPT-OSS 120B
+    // Request a real-time streaming completion via Qwen 3.8 27B
     const responseStream = await groq.chat.completions.create({
-      model: "openai/gpt-oss-120b",
+      model: "qwen/qwen3.8-27b",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: `Language: ${language}\n\nUser Request:\n${prompt}` }
@@ -89,11 +89,16 @@ export async function POST(request: Request) {
       },
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("Groq API Error:", error);
 
     // Gracefully catch standard free-tier rate limits (429) if triggered
-    if (error?.status === 429 || error?.message?.includes("429")) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "status" in error &&
+      error.status === 429
+    ) {
       return new Response(
         JSON.stringify({ error: "System is temporarily busy handling requests. Please wait a few seconds before trying again." }),
         { status: 429, headers: { "Content-Type": "application/json" } }

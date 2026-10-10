@@ -9,16 +9,18 @@ export const useHistory = () => {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
 
   useEffect(() => {
-    setIsClient(true);
-    // Load history from localStorage
-    const storedHistory = localStorage.getItem(HISTORY_KEY);
-    if (storedHistory) {
-      try {
-        setHistory(JSON.parse(storedHistory));
-      } catch (e) {
-        console.error("Failed to parse history", e);
+    const id = window.setTimeout(() => {
+      setIsClient(true);
+      const storedHistory = localStorage.getItem(HISTORY_KEY);
+      if (storedHistory) {
+        try {
+          setHistory(JSON.parse(storedHistory));
+        } catch (e) {
+          console.error("Failed to parse history", e);
+        }
       }
-    }
+    }, 0);
+    return () => window.clearTimeout(id);
   }, []);
 
   const saveToHistory = (entry: HistoryEntry) => {
